@@ -872,12 +872,14 @@
                             img.style.transformOrigin = 'center center';
                         });
                     });
-                } else {
+             } else {
+                    // Ajusta el texto de la etiqueta para el contexto táctil
                     document.querySelectorAll('.zoom-tag').forEach(tag => {
-                        tag.textContent = 'Desliza para revelar el detalle de piel y textil';
+                        tag.textContent = 'Desliza para ver el zoom en detalle';
                     });
 
-                    const AUTO_ZOOM = 1.55;
+                    const minScale = 1.0;
+                    const maxScale = 2.7; // ¡Zoom mucho más potente y visible en cel!
                     const activeFrames = new Set();
 
                     const autoZoomObserver = new IntersectionObserver((entries) => {
@@ -891,7 +893,7 @@
                                 img.style.transformOrigin = 'center center';
                             }
                         });
-                    }, { rootMargin: '10% 0px 10% 0px', threshold: 0 });
+                    }, { rootMargin: '0px 0px 0px 0px', threshold: [0, 0.2, 0.4, 0.6, 0.8, 1] });
 
                     zoomFrames.forEach(frame => autoZoomObserver.observe(frame));
 
@@ -901,11 +903,20 @@
                         activeFrames.forEach(frame => {
                             const img = frame.querySelector('img');
                             const rect = frame.getBoundingClientRect();
+                            
+                            // Calcula qué tan avanzado va el elemento por la pantalla (de 0 a 1)
                             let progress = (vh - rect.top) / (vh + rect.height);
                             progress = Math.min(Math.max(progress, 0), 1);
-                            const origin = 22 + progress * 56;
+                            
+                            // Dinámica de zoom real: se acerca al máximo cuando la foto queda al centro de la pantalla
+                            let distanceFromCenter = Math.abs(progress - 0.5); 
+                            let currentScale = maxScale - (distanceFromCenter * 2 * (maxScale - minScale));
+                            currentScale = Math.max(minScale, Math.min(maxScale, currentScale));
+
+                            // Paneo suave combinado con el zoom
+                            const origin = 30 + progress * 40; 
                             img.style.transformOrigin = `${origin}% ${origin}%`;
-                            img.style.transform = `scale(${AUTO_ZOOM})`;
+                            img.style.transform = `scale(${currentScale})`;
                         });
                         ticking = false;
                     };
