@@ -789,9 +789,12 @@
         }
     }
 </style>
+    
 
 <script>
-    // SCRIPT PARA ACTIVAR EL EFECTO MAZO AL HACER SCROLL
+// ==========================================
+    // 1. SCRIPT DE LA MAGIA DEL MAZO AL HACER SCROLL
+    // ==========================================
     document.addEventListener("DOMContentLoaded", () => {
         const observerOptions = {
             root: null,
@@ -817,6 +820,93 @@
             triptychObserver.observe(group);
         });
     });
+
+    // ==========================================
+    // 2. SCRIPT DE ZOOM DE DETALLE (PC y Celular)
+    // ==========================================
+    
+const zoomFrames = document.querySelectorAll('.zoom-frame, .triptych-card');
+    const hasFineHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    if (zoomFrames.length) {
+        if (hasFineHover) {
+            // COMPORTAMIENTO PARA PC (ZOOM CON EL CURSOR)
+            zoomFrames.forEach(frame => {
+                const img = frame.querySelector('img');
+                const NIVELES_ZOOM = 3.5;
+
+                frame.addEventListener('mousemove', (e) => {
+                    const rect = frame.getBoundingClientRect();
+                    const x = ((e.clientX - rect.left) / rect.width) * 100;
+                    const y = ((e.clientY - rect.top) / rect.height) * 100;
+                    img.style.transformOrigin = `${x}% ${y}%`;
+                    img.style.transform = `scale(${NIVELES_ZOOM})`;
+                });
+
+                frame.addEventListener('mouseleave', () => {
+                    img.style.transform = 'scale(1)';
+                    img.style.transformOrigin = 'center center';
+                });
+            });
+        } else {
+            // COMPORTAMIENTO PARA CELULAR (ZOOM DINÁMICO AL HACER SCROLL)
+            document.querySelectorAll('.zoom-tag').forEach(tag => {
+                tag.textContent = 'Desliza para ver el zoom en detalle';
+            });
+
+            const minScale = 1.0;
+            const maxScale = 2.7; 
+            const activeFrames = new Set();
+
+            const autoZoomObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const img = entry.target.querySelector('img');
+                    if (entry.isIntersecting) {
+                        activeFrames.add(entry.target);
+                    } else {
+                        activeFrames.delete(entry.target);
+                        if (img) {
+                            img.style.transform = 'scale(1)';
+                            img.style.transformOrigin = 'center center';
+                        }
+                    }
+                });
+            }, { rootMargin: '0px 0px 0px 0px', threshold: [0, 0.2, 0.4, 0.6, 0.8, 1] });
+
+            zoomFrames.forEach(frame => autoZoomObserver.observe(frame));
+
+            let ticking = false;
+            const updateAutoPan = () => {
+                const vh = window.innerHeight;
+                activeFrames.forEach(frame => {
+                    const img = frame.querySelector('img');
+                    if (!img) return;
+                    const rect = frame.getBoundingClientRect();
+                    
+                    let progress = (vh - rect.top) / (vh + rect.height);
+                    progress = Math.min(Math.max(progress, 0), 1);
+                    
+                    let distanceFromCenter = Math.abs(progress - 0.5); 
+                    let currentScale = maxScale - (distanceFromCenter * 2 * (maxScale - minScale));
+                    currentScale = Math.max(minScale, Math.min(maxScale, currentScale));
+
+                    const origin = 30 + progress * 40; 
+                    img.style.transformOrigin = `${origin}% ${origin}%`;
+                    img.style.transform = `scale(${currentScale})`;
+                });
+                ticking = false;
+            };
+
+            window.addEventListener('scroll', () => {
+                if (!ticking) {
+                    window.requestAnimationFrame(updateAutoPan);
+                    ticking = true;
+                }
+            }, { passive: true });
+
+            updateAutoPan();
+        }
+    }
 </script>
     
     <!-- COLECCIONES -->
