@@ -1143,6 +1143,26 @@ const zoomFrames = document.querySelectorAll('.zoom-frame, .triptych-card');
                 revealEls.forEach(el => el.classList.add('is-visible'));
             }
 
+    // =========================================================
+    // NUEVO: EFECTO ZOOM-OUT + FADE PARA EL TEXTO DEL HERO
+    // =========================================================
+
+            const zoomTextEls = document.querySelectorAll('.zoom-in-text');
+    if ('IntersectionObserver' in window && zoomTextEls.length) {
+        const zoomTextObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-revealed');
+                    zoomTextObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.25, rootMargin: '0px 0px -10% 0px' });
+
+        zoomTextEls.forEach(el => zoomTextObserver.observe(el));
+    } else {
+        zoomTextEls.forEach(el => el.classList.add('is-revealed'));
+    }
+
             // ZOOM DE DETALLE - Atelier
             const zoomFrames = document.querySelectorAll('.zoom-frame');
             const hasFineHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
